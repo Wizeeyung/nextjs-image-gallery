@@ -6,7 +6,7 @@ import { cache } from "react";
 import { Alert } from "react-bootstrap";
 
 interface PageProps{
-  params: {username: string},
+  params: Promise<{username: string}>,
 }
 
 
@@ -21,13 +21,18 @@ async function getUser(username: string): Promise<UnsplashUser>{
 const getUserCache = cache(getUser)
 
 // we wnt to generate a dynamic metadata, we use promise cause async function return promises
-export async function generateMetadata({params: {username}}:PageProps ): Promise<Metadata>{
-  
+export async function generateMetadata(props:PageProps): Promise<Metadata> {
+  const params = await props.params;
+
+  const {
+    username
+  } = params;
+
   // const response = await fetch(`https://api.unsplash.com/users/${username}?client_id=${process.env.UNSPLASH_ACCESS_KEY}`)
 
   // if(response.status === 404) notFound();
   // const user: UnsplashUser = await response.json();
-  const user = await getUser(username)
+  const user = await getUserCache(username)
   // const user = getUserCache(username)
   return{
     // title: `${user.first_name}  ${user.last_name} - Nextjs Image gallery`
@@ -35,11 +40,16 @@ export async function generateMetadata({params: {username}}:PageProps ): Promise
     // incase there is not first or last name you can use any one or if there is none then use the username
     title: ([user.first_name, user.last_name].filter(Boolean).join(" ") || user.username) + " - Next JS Image gallery"
   }
-
 }
 
-export default async function Page({params: {username}}: PageProps){
-  const user = await getUser(username)
+export default async function Page(props: PageProps) {
+  const params = await props.params;
+
+  const {
+    username
+  } = params;
+
+  const user = await getUserCache(username)
   // const response = await fetch(`https://api.unsplash.com/users/${username}?client_id=${process.env.UNSPLASH_ACCESS_KEY}`)
 
   // if(response.status === 404) notFound();
@@ -59,5 +69,4 @@ export default async function Page({params: {username}}: PageProps){
       <a href={`https://unsplash.com/${user.username}`} target="_blank">Unsplash profile</a>
     </div>
   )
-
 }
